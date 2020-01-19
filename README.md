@@ -9,6 +9,9 @@ Backupper works for me. It may eat your hard drive and set your hard disk on
 fire. If that happens, I am sorry for you, but there is not much I can do.
 Use at your own risk. No guarantee implied whatsoever.
 
+If you want to use it, I suggest that at least you read the source to ensure
+that it does what you expect, it is only 136 lines.
+
 ## Assumption
 
 In my workflow, I maintain a set of documents on multiple machines. I want
