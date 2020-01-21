@@ -25,7 +25,11 @@ Diffs only contain the updated files and some metadata, so they are easily
 portable on a USB key. Digests are just JSON files containing hashes.
 
 A final assumption - I don't delete documents (but I may move them). Backupper
-never deletes documents, but only adds new content.
+has an option to remove documents, but it is disabled by default. It is not
+smart, and will not look at timestamps - instead it will removed every file
+present in the target directory but not in the digest. so DO NOT ENABLE IT
+unless you have read the source, checked the content of the digest and are
+sure of what you are doing.
 
 ## Usage
 

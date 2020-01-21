@@ -57,6 +57,8 @@ proc computeDiff(before, after: Digest): Diff =
   let
     hashToPath = before.hashes.mapIt((it.hash, it.path)).toTable
     existingContent = before.hashes.toHashSet
+    newHashes = after.hashes.mapIt(it.hash).toHashSet
+    newPaths = after.hashes.mapIt(it.path).toHashSet
   for item in after.hashes:
     let
       hash = item.hash
@@ -68,6 +70,12 @@ proc computeDiff(before, after: Digest): Diff =
           result.changes.add(FileMoved(oldPath, path))
       else:
         result.changes.add(FileAdded(path))
+  for item in before.hashes:
+    let
+      hash = item.hash
+      path = item.path
+    if not ((hash in newHashes) or (path in newPaths)):
+      result.changes.add(FileRemoved(path))
 
 proc materialize(base, digestDir: string, delta: Diff, digest: Digest) =
   let
@@ -91,7 +99,7 @@ proc materialize(base, digestDir: string, delta: Diff, digest: Digest) =
 
 # Recovering
 
-proc performRecovery(dir, digestDir: string, delta: Diff, digest: Digest) =
+proc performRecovery(dir, digestDir: string, delta: Diff, digest: Digest, remove: bool) =
   for item in delta.changes:
     match item:
       FileAdded(path):
@@ -103,7 +111,12 @@ proc performRecovery(dir, digestDir: string, delta: Diff, digest: Digest) =
           createDir(targetDir)
           copyFile(source, target)
       FileRemoved(path):
-        echo fmt"File {path} should be removed, but for safety we are not doing it"
+        if remove:
+          let target = dir / path
+          if existsFile(target):
+            removeFile(target)
+        else:
+          echo fmt"File `{path}` should be removed, but for safety we are not doing it"
       FileMoved(oldPath, newPath):
         let
           source = dir / oldPath
@@ -126,11 +139,11 @@ proc changed(dir, json, digestDir: string) =
     delta = computeDiff(oldDigest, newDigest)
   materialize(dir, digestDir, delta, newDigest)
 
-proc recover(dir, digestDir: string) =
+proc recover(dir, digestDir: string, remove = false) =
   let
     digest = readDigest(digestDir / "digest.json")
     delta = readDiff(digestDir / "diff.json")
-  performRecovery(dir, digestDir, delta, digest)
+  performRecovery(dir, digestDir, delta, digest, remove)
 
 when isMainModule:
   dispatchMulti([digest], [changed], [recover])
